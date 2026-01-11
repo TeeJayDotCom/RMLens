@@ -1,0 +1,37 @@
+name: Convert Excel to JSON Daily
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight
+  workflow_dispatch:      # Manual trigger
+  push:
+    paths:
+      - 'RM.xlsx'        # Runs when Excel file changes
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Convert Excel to JSON
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - run: |
+          pip install pandas openpyxl
+          python -c "
+          import pandas as pd, json
+          df = pd.read_excel('RM.xlsx')
+          data = df.to_dict('records')
+          with open('inventory.json', 'w') as f:
+              json.dump(data, f)
+          "
+      
+      - name: Commit and push JSON
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add inventory.json
+          git commit -m "Auto-convert Excel to JSON" || echo "No changes"
+          git push
