@@ -1,37 +1,66 @@
 name: Convert Excel to JSON Daily
 on:
-  schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight
-  workflow_dispatch:      # Manual trigger
-  push:
-    paths:
-      - 'RM.xlsx'        # Runs when Excel file changes
+  workflow_dispatch:  # Start with manual trigger only for debugging
 
 jobs:
   convert:
     runs-on: ubuntu-latest
+    
+    # Add write permissions
+    permissions:
+      contents: write
+    
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
       
-      - name: Convert Excel to JSON
+      - name: Debug - List files
+        run: |
+          echo "Files in repository:"
+          ls -la
+          echo "Checking for RM.xlsx:"
+          if [ -f "RM.xlsx" ]; then
+            echo "✓ RM.xlsx exists"
+            echo "File size: $(wc -c < RM.xlsx) bytes"
+          else
+            echo "✗ ERROR: RM.xlsx not found!"
+            exit 1
+          fi
+      
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       
-      - run: |
-          pip install pandas openpyxl
+      - name: Install dependencies
+        run: pip install pandas openpyxl
+      
+      - name: Convert Excel to JSON
+        run: |
           python -c "
-          import pandas as pd, json
+          import pandas as pd
+          import json
           df = pd.read_excel('RM.xlsx')
           data = df.to_dict('records')
           with open('RM.json', 'w') as f:
               json.dump(data, f, indent=2)
+          print(f'Converted {len(data)} rows to JSON')
           "
       
-      - name: Commit and push JSON file
+      - name: Configure Git
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add RM.json
-          git commit -m "Auto-convert RM.xlsx to RM.json" || echo "No changes"
-          git push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Commit and push
+        run: |
+          # Check if there are changes
+          if git diff --quiet && git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git add RM.json
+            git commit -m "Auto-convert Excel to JSON $(date +'%Y-%m-%d')"
+            git push
+          fi
