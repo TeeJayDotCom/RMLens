@@ -24,7 +24,7 @@ jobs:
           import pandas as pd, json
           df = pd.read_excel('RM.xlsx')
           data = df.to_dict('records')
-          with open('inventory.json', 'w') as f:
+          with open('RM.json', 'w') as f:
               json.dump(data, f)
           "
       
@@ -32,6 +32,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add inventory.json
+          git add RM.json
           git commit -m "Auto-convert Excel to JSON" || echo "No changes"
           git push
