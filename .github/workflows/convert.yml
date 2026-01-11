@@ -25,13 +25,13 @@ jobs:
           df = pd.read_excel('RM.xlsx')
           data = df.to_dict('records')
           with open('RM.json', 'w') as f:
-              json.dump(data, f)
+              json.dump(data, f, indent=2)
           "
       
-      - name: Commit and push JSON
+      - name: Commit and push JSON file
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add RM.json
-          git commit -m "Auto-convert Excel to JSON" || echo "No changes"
+          git commit -m "Auto-convert RM.xlsx to RM.json" || echo "No changes"
           git push
